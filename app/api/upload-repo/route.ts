@@ -40,7 +40,8 @@ export async function POST(req: Request) {
       fs.mkdirSync(baseDir);
     }
 
-    const repoPath = path.join(baseDir, repoId);
+    const repoPath = path.join("/tmp", repoId);
+    fs.mkdirSync(repoPath, { recursive: true });
 
     // Clone repo
     const git = simpleGit();
