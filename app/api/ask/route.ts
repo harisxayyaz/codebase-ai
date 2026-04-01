@@ -85,7 +85,7 @@ Answer the question based on the context only. If the answer is not in the conte
 
     // Step 3: GPT call
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0,
     });
