@@ -144,8 +144,8 @@ export async function POST(req: Request) {
       chunksCount: allChunks.length,
       message: "Embeddings created and stored successfully!",
     });
-  } catch (error) {
-    console.log(error);
-    return NextResponse.json({ error: "Upload or embedding failed" });
+  } catch (error: any) {
+    console.error("Upload repo failed:", error);
+    return NextResponse.json({ error: error.message || JSON.stringify(error) });
   }
 }
