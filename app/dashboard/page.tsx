@@ -2,17 +2,23 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  FolderGit2, 
-  MessageSquare, 
-  Trash2, 
-  Plus, 
+import {
+  FolderGit2,
+  MessageSquare,
+  Trash2,
+  Plus,
   ArrowRight,
   Clock,
-  ExternalLink 
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,14 +60,13 @@ export default function DashboardPage() {
   }, []);
 
   const deleteRepo = async (repoId: string) => {
-    try {
-      await fetch(`/api/repos/${repoId}`, { method: "DELETE" });
-      setRepos(repos.filter((r) => r.id !== repoId));
-    } catch (error) {
-      console.error("Failed to delete repo:", error);
-    }
-  };
+    if (!confirm("Delete this repo?")) return;
 
+    await fetch(`/api/chats/${repoId}`, {
+      method: "DELETE",
+    });
+    setRepos((prev) => prev.filter((r) => r.id !== repoId));
+  };
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -206,10 +211,12 @@ export default function DashboardPage() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete repository?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Delete repository?
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will permanently delete the repository from your account. 
-                              This action cannot be undone.
+                              This will permanently delete the repository from
+                              your account. This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

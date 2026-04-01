@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from("code_chunks")
-    .select("repo_id")
-    .limit(100)
-    .order("repo_id");
-  if (error) return NextResponse.json({ error });
+  try {
+    const { data, error } = await supabase
+      .from("repos")       // <- query the repos table
+      .select("id, name")  // <- get both id and human-readable name
+      .order("created_at", { ascending: false });
 
-  // Get unique repo IDs
-  const uniqueRepos = Array.from(new Set(data.map((r: any) => r.repo_id))).map(
-    (id) => ({ id, name: id }),
-  );
+    if (error) throw error;
 
-  return NextResponse.json({ repos: uniqueRepos });
+    return NextResponse.json({ repos: data || [] });
+  } catch (err) {
+    console.log(err);
+    return NextResponse.json({ repos: [], error: "Failed to fetch repos" });
+  }
 }

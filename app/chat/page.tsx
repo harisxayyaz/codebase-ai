@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Bot, User, Loader2, ChevronDown, Code2, FileCode } from "lucide-react";
+import {
+  Send,
+  Bot,
+  User,
+  Loader2,
+  ChevronDown,
+  Code2,
+  FileCode,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,6 +59,24 @@ export default function ChatPage() {
     fetchRepos();
   }, []);
 
+  useEffect(() => {
+    if (!selectedRepo) return;
+
+    async function fetchChats() {
+      const res = await fetch(`/api/chats/${selectedRepo}`);
+      const data = await res.json();
+
+      const formatted = data.chats.map((c: any) => ({
+        role: c.role,
+        text: c.message, // 👈 IMPORTANT
+      }));
+
+      setMessages(formatted);
+    }
+
+    fetchChats();
+  }, [selectedRepo]);
+
   const handleAsk = async () => {
     if (!question || !selectedRepo) return;
     setLoading(true);
@@ -63,7 +89,10 @@ export default function ChatPage() {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repoId: selectedRepo, question: currentQuestion }),
+        body: JSON.stringify({
+          repoId: selectedRepo,
+          question: currentQuestion,
+        }),
       });
 
       const data = await res.json();
@@ -75,7 +104,10 @@ export default function ChatPage() {
       console.log(err);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: "Sorry, I couldn&apos;t process your request. Please try again." },
+        {
+          role: "assistant",
+          text: "Sorry, I couldn&apos;t process your request. Please try again.",
+        },
       ]);
     } finally {
       setLoading(false);
@@ -88,7 +120,10 @@ export default function ChatPage() {
       return lines.map((line, idx) => {
         if (line.startsWith("File:")) {
           return (
-            <div key={idx} className="mt-2 flex items-center gap-2 font-mono text-sm text-accent">
+            <div
+              key={idx}
+              className="mt-2 flex items-center gap-2 font-mono text-sm text-accent"
+            >
               <FileCode className="h-4 w-4" />
               {line}
             </div>
@@ -101,7 +136,10 @@ export default function ChatPage() {
           );
         } else if (line.startsWith("```")) {
           return (
-            <pre key={idx} className="mt-2 overflow-x-auto rounded-lg bg-background p-3 text-sm">
+            <pre
+              key={idx}
+              className="mt-2 overflow-x-auto rounded-lg bg-background p-3 text-sm"
+            >
               <code>{line.replace(/```/g, "")}</code>
             </pre>
           );
@@ -127,10 +165,12 @@ export default function ChatPage() {
               </div>
               <div>
                 <h1 className="font-semibold">AI Chat</h1>
-                <p className="text-sm text-muted-foreground">Ask questions about your code</p>
+                <p className="text-sm text-muted-foreground">
+                  Ask questions about your code
+                </p>
               </div>
             </div>
-            
+
             <Select value={selectedRepo} onValueChange={setSelectedRepo}>
               <SelectTrigger className="w-[200px] bg-background">
                 <SelectValue placeholder="Select repository" />
@@ -162,8 +202,8 @@ export default function ChatPage() {
                 </div>
                 <h2 className="text-xl font-semibold">Start a conversation</h2>
                 <p className="mt-2 max-w-md text-muted-foreground">
-                  Ask questions about your codebase. I can help you understand architecture, 
-                  find specific code, explain functions, and more.
+                  Ask questions about your codebase. I can help you understand
+                  architecture, find specific code, explain functions, and more.
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-2">
                   {[
@@ -190,7 +230,7 @@ export default function ChatPage() {
                     key={idx}
                     className={cn(
                       "flex gap-4",
-                      msg.role === "user" ? "flex-row-reverse" : "flex-row"
+                      msg.role === "user" ? "flex-row-reverse" : "flex-row",
                     )}
                   >
                     <div
@@ -198,7 +238,7 @@ export default function ChatPage() {
                         "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
                         msg.role === "user"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-accent/10 text-accent"
+                          : "bg-accent/10 text-accent",
                       )}
                     >
                       {msg.role === "user" ? (
@@ -212,7 +252,7 @@ export default function ChatPage() {
                         "max-w-[80%] rounded-2xl px-4 py-3",
                         msg.role === "user"
                           ? "bg-primary text-primary-foreground"
-                          : "bg-card border border-border"
+                          : "bg-card border border-border",
                       )}
                     >
                       <div className="text-sm leading-relaxed">
@@ -252,8 +292,8 @@ export default function ChatPage() {
               onKeyDown={(e) => e.key === "Enter" && !loading && handleAsk()}
               disabled={loading || !selectedRepo}
             />
-            <Button 
-              onClick={handleAsk} 
+            <Button
+              onClick={handleAsk}
               disabled={loading || !question || !selectedRepo}
               size="icon"
             >

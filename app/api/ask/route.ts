@@ -4,16 +4,12 @@ import { supabase } from "@/lib/supabaseClient";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Number of chunks to retrieve for context
 const TOP_K = 30;
-
-// Maximum length of a chunk for GPT context (tokens)
-const MAX_CHUNK_LENGTH = 2000; // roughly ~1000 words
+const MAX_CHUNK_LENGTH = 2000;
 
 export async function POST(req: Request) {
   try {
     const { repoId, question } = await req.json();
-
     if (!repoId || !question) {
       return NextResponse.json(
         { error: "repoId and question are required" },
@@ -21,14 +17,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔹 Step 1: Generate embedding for the question
+    // Step 1: Question embedding
     const embeddingRes = await openai.embeddings.create({
       model: "text-embedding-3-small",
       input: question,
     });
     const [questionEmbedding] = embeddingRes.data.map((d) => d.embedding);
 
-    // 🔹 Step 2: Fetch relevant chunks from Supabase
+    // Step 2: Fetch relevant chunks
     const searchRes = await supabase.rpc("match_code_chunks", {
       query_embedding: questionEmbedding,
       match_count: TOP_K,
@@ -50,14 +46,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ answer: "No relevant code found." });
     }
 
-    // 🔹 Step 3: Prioritize README.md or main files first
+    // Prioritize README
     matchedChunks.sort((a, b) => {
       if (a.path.toLowerCase().includes("readme")) return -1;
       if (b.path.toLowerCase().includes("readme")) return 1;
       return 0;
     });
 
-    // 🔹 Step 4: Truncate large chunks to MAX_CHUNK_LENGTH
+    // Truncate chunks
     matchedChunks = matchedChunks.map((chunk) => {
       if (chunk.content.length > MAX_CHUNK_LENGTH) {
         return {
@@ -69,7 +65,7 @@ export async function POST(req: Request) {
       return chunk;
     });
 
-    // 🔹 Step 5: Build context for GPT
+    // Build GPT context
     const contextText = matchedChunks
       .map((c) => `File: ${c.path}, Chunk ${c.chunk_index}:\n${c.content}`)
       .join("\n\n");
@@ -87,7 +83,7 @@ ${question}
 Answer the question based on the context only. If the answer is not in the context, say "I don't know".
 `;
 
-    // 🔹 Step 6: Call GPT
+    // Step 3: GPT call
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [{ role: "user", content: prompt }],
@@ -96,6 +92,12 @@ Answer the question based on the context only. If the answer is not in the conte
 
     const answer =
       completion.choices[0]?.message?.content || "No answer generated";
+
+    // Step 4: Save chat history
+    await supabase.from("repo_chats").insert([
+      { repo_id: repoId, role: "user", message: question },
+      { repo_id: repoId, role: "assistant", message: answer },
+    ]);
 
     return NextResponse.json({ answer });
   } catch (err) {

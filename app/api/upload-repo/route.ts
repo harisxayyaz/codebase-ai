@@ -23,6 +23,17 @@ export async function POST(req: Request) {
   try {
     const { repoUrl } = await req.json();
     const repoId = uuidv4();
+
+    // Extract repo name from GitHub URL
+    const repoName = repoUrl.split("/").slice(-1)[0].replace(".git", "");
+
+    // Store repo in Supabase
+    const { error: repoError } = await supabase.from("repos").insert({
+      id: repoId,
+      name: repoName,
+    });
+    if (repoError) console.log("Repo insert error:", repoError);
+
     const repoPath = path.join(process.cwd(), "repos", repoId);
 
     // Clone repo
@@ -44,7 +55,6 @@ export async function POST(req: Request) {
           readFiles(fullPath);
         } else {
           const ext = path.extname(fullPath);
-
           if (allowedExtensions.includes(ext)) {
             try {
               const content = fs.readFileSync(fullPath, "utf-8");
@@ -100,7 +110,6 @@ export async function POST(req: Request) {
     for (let i = 0; i < allChunks.length; i += BATCH_SIZE) {
       const batch = allChunks.slice(i, i + BATCH_SIZE);
 
-      // Create embeddings in one API call
       const embeddingRes = await openai.embeddings.create({
         model: "text-embedding-3-small",
         input: batch.map((c) => c.text),
@@ -108,7 +117,6 @@ export async function POST(req: Request) {
 
       const embeddings = embeddingRes.data.map((d) => d.embedding);
 
-      // Insert into Supabase
       const insertData = batch.map((chunk, idx) => ({
         repo_id: repoId,
         path: chunk.path,
@@ -124,6 +132,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       repoId,
+      repoName, // <-- return readable name too
       filesCount: fileData.length,
       chunksCount: allChunks.length,
       message: "Embeddings created and stored successfully!",
