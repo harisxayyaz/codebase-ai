@@ -34,14 +34,13 @@ export async function POST(req: Request) {
     });
     if (repoError) console.log("Repo insert error:", repoError);
 
-    const baseDir = path.join(process.cwd(), "temp_repos");
+    const baseDir = path.join("/tmp", repoId);
 
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir);
     }
 
-    const repoPath = path.join("/tmp", repoId);
-    fs.mkdirSync(repoPath, { recursive: true });
+    const repoPath = path.join(baseDir, repoId);
 
     // Clone repo
     const git = simpleGit();
