@@ -34,7 +34,13 @@ export async function POST(req: Request) {
     });
     if (repoError) console.log("Repo insert error:", repoError);
 
-    const repoPath = path.join(process.cwd(), "repos", repoId);
+    const baseDir = path.join(process.cwd(), "temp_repos");
+
+    if (!fs.existsSync(baseDir)) {
+      fs.mkdirSync(baseDir);
+    }
+
+    const repoPath = path.join(baseDir, repoId);
 
     // Clone repo
     const git = simpleGit();
@@ -128,7 +134,8 @@ export async function POST(req: Request) {
       const { error } = await supabase.from("code_chunks").insert(insertData);
       if (error) console.log("Supabase insert error:", error);
     }
-
+    // Delete cloned repo to save space
+    fs.rmSync(repoPath, { recursive: true, force: true });
     return NextResponse.json({
       success: true,
       repoId,
